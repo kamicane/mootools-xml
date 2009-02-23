@@ -1,4 +1,5 @@
 /* XML Methods for MooTools */
+/* Requires MooTools v1.2 */
 
 var XML = {
 	
@@ -33,12 +34,12 @@ var XML = {
 		return root;
 	},
 	
-	rootToHash: function(root){
+	rootToHashes: function(root){
 		var hashes = [], children = root.childNodes;
 
 		for (var i = 0, l = children.length; i < l; i++){
-			var h = XML.nodeToHash(children[i]);
-			if (h) hashes.push(h);
+			var hash = XML.nodeToHash(children[i]);
+			if (hash) hashes.push(hash);
 		}
 
 		return hashes;
@@ -58,7 +59,7 @@ var XML = {
 					if (attribute.nodeValue && attribute.nodeValue != 'inherit') attributesHash[attribute.nodeName] = attribute.nodeValue;
 				}
 
-				return {tag: node.nodeName.toLowerCase(), attributes: attributesHash, children: XML.rootToHash(node)};
+				return {tag: node.nodeName.toLowerCase(), attributes: attributesHash, children: XML.rootToHashes(node)};
 
 			case 'textnode': return {text: node.nodeValue};
 
@@ -77,6 +78,24 @@ var XML = {
 		if (hash.text) element = document.newTextNode(hash.text);
 		else element = document.newElement(tag || hash.tag, hash.attributes).adopt(XML.hashesToTree(hash.children));
 		return element;
+	},
+	
+	hashToHTML: function(hash, level){
+		var tabs = new Array(level || 0).join('\t');
+		if (hash.text) return tabs + hash.text;
+		var attributes = [''];
+		for (var p in hash.attributes) attributes.push(p + '="' + hash.attributes[p] + '"');
+		attributes = attributes.join(' ');
+		var open = tabs + '<' + hash.tag + attributes + '>\n';
+		var close = '\n' + tabs + '</' + hash.tag + '>';
+		var children = XML.hashesToHTML(hash.children, level + 1);
+		return open + children + close;
+	},
+
+	hashesToHTML: function(hashes, level){
+		var html = [];
+		for (var i = 0, l = hashes.length; i < l; i++) html.push(XML.hashToHTML(hashes[i], level));
+		return html.join('\n');
 	},
 	
 	transform: function(xml, xsl){
